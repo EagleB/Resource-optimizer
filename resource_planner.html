@@ -148,7 +148,7 @@
 <body>
 <header>
   <button id="togglePanel" title="Show/hide setup panel">☰</button>
-  <h1>Weekly Resource Planner</h1>
+  <h1 id="title" data-i18n="title">Weekly Resource Planner</h1>
   <button class="primary" id="btnOptimize">⚡ Optimize</button>
   <button id="btnClear">Clear plan</button>
   <span class="spacer"></span>
@@ -157,6 +157,7 @@
     <button data-view="day">Day</button>
   </div>
   <span class="spacer"></span>
+  <button id="langToggle" title="Change language">EN</button>
   <button id="btnSave">💾 Save plan (.json)</button>
   <button id="btnLoad">📂 Load plan</button>
   <button id="btnCSV">📊 Export Excel (.csv)</button>
@@ -165,24 +166,24 @@
 
 <div class="layout">
   <aside id="panel">
-    <h2>Week settings</h2>
+    <h2 id="h2WeekSettings" data-i18n="week_settings">Week settings</h2>
     <div class="grid2">
-      <div class="field"><label>Week starting (Monday)</label><input type="date" id="weekLabel"></div>
+      <div class="field"><label id="lblWeekStarting">Week starting (Monday)</label><input type="date" id="weekLabel"></div>
       <div></div>
-      <div class="field"><label>Day start time</label><select id="windowStart"></select></div>
-      <div class="field"><label>Day end time</label><select id="windowEnd"></select></div>
-      <div class="field"><label>2nd resource starts at</label><select id="secondStart"></select></div>
+      <div class="field"><label id="lblDayStart">Day start time</label><select id="windowStart"></select></div>
+      <div class="field"><label id="lblDayEnd">Day end time</label><select id="windowEnd"></select></div>
+      <div class="field"><label id="lblSecondStart">2nd resource starts at</label><select id="secondStart"></select></div>
       <div></div>
-      <div class="field"><label>People required before 2nd start</label><input type="number" id="headcountBefore" min="0" max="20"></div>
-      <div class="field"><label>People required after 2nd start</label><input type="number" id="headcountAfter" min="0" max="20"></div>
+      <div class="field"><label id="lblPeopleBefore">People required before 2nd start</label><input type="number" id="headcountBefore" min="0" max="20"></div>
+      <div class="field"><label id="lblPeopleAfter">People required after 2nd start</label><input type="number" id="headcountAfter" min="0" max="20"></div>
     </div>
-    <h2>Working days</h2>
-    <div class="field"><label>Number of working days per week</label><input type="number" id="wdCount" min="1" max="7"></div>
+    <h2 id="h2WorkingDays" data-i18n="working_days">Working days</h2>
+    <div class="field"><label id="lblWdCount">Number of working days per week</label><input type="number" id="wdCount" min="1" max="7"></div>
     <div class="days" id="wdBoxes"></div>
 
-    <h2>People</h2>
+    <h2 id="h2People" data-i18n="people">People</h2>
     <table class="people">
-      <thead><tr><th></th><th>Name</th><th>Hours/week</th><th>Max shift</th><th>Min shift</th><th>Rest day</th><th></th></tr></thead>
+      <thead><tr><th></th><th id="thName">Name</th><th id="thHours">Hours/week</th><th id="thMaxShift">Max shift</th><th id="thMinShift">Min shift</th><th id="thRestDay">Rest day</th><th></th></tr></thead>
       <tbody id="peopleBody"></tbody>
     </table>
     <div style="display:flex;gap:8px;margin-top:8px">
@@ -190,7 +191,7 @@
       <span class="spacer"></span>
       <button id="btnSample" title="Replace everything with the sample data">Load sample</button>
     </div>
-    <p class="hint">Rest day is a preference: the optimizer honours it unless it is the only way to close a coverage gap (then it is flagged).</p>
+    <p class="hint" id="restHint">Rest day is a preference: the optimizer honours it unless it is the only way to close a coverage gap (then it is flagged).</p>
   </aside>
 
   <main>
@@ -204,7 +205,49 @@
 (function(){
 'use strict';
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const DAY_NAMES={Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'};
+let DAY_NAMES={Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'};
+const LOCALES={
+  en:{
+    title:'Weekly Resource Planner',optimize:'Optimize',clear_plan:'Clear plan',view_week:'Week',view_day:'Day',save:'Save plan (.json)',load:'Load plan',export_csv:'Export Excel (.csv)',week_settings:'Week settings',working_days:'Working days',people:'People',add_person:'+ Add person',load_sample:'Load sample',rest_hint:'Rest day is a preference: the optimizer honours it unless it is the only way to close a coverage gap (then it is flagged).',planning_table:'Planning table',person:'Person',planned:'Planned',budget:'Budget',remaining:'Remaining',coverage:'Coverage',required_word:'required',choose_off:'Choose "Off" to remove a shift, or drag a shift with ⠿ to another cell (day or person). Changes are reflected immediately in the calendar above. Blue cells are preferred rest days.',drag_hint_week:'Drag the top/bottom edge of a shift to change its start/end, drag the shift up/down to change its time, or onto another day to move it (the time follows where you drop it; dropping on a day where the person already works swaps the two shifts). Click a shift to jump to its cell in the table below.',drag_hint_day:'Drag the left/right edge of a shift to change its start/end, drag the shift left/right to change its time, onto another row to give it to another person, or onto a cell of the table below to move it to another day. Click a shift to jump to its cell in the table.' ,license_section:'License',lang_name:'EN',DAY_NAMES:{Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'},
+    week_starting:'Week starting (Monday)',day_start_time:'Day start time',day_end_time:'Day end time',second_resource_starts_at:'2nd resource starts at',people_required_before:'People required before 2nd start',people_required_after:'People required after 2nd start',num_working_days:'Number of working days per week',col_name:'Name',col_hours:'Hours/week',col_maxshift:'Max shift',col_minshift:'Min shift',col_restdays:'Rest day',toggle_panel_title:'Show/hide setup panel',remove_title:'Remove',change_color_title:'Click to change colour',sample_title:'Replace everything with the sample data'
+  },
+  it:{
+    title:'Pianificatore Risorse Settimanale',optimize:'Ottimizza',clear_plan:'Azzera piano',view_week:'Settimana',view_day:'Giorno',save:'Salva piano (.json)',load:'Carica piano',export_csv:'Esporta Excel (.csv)',week_settings:'Impostazioni settimana',working_days:'Giorni lavorativi',people:'Persone',add_person:'+ Aggiungi persona',load_sample:'Carica esempio',rest_hint:'Il giorno di riposo è una preferenza: l\'ottimizzatore la rispetta a meno che sia l\'unico modo per coprire una lacuna.',planning_table:'Tabella di pianificazione',person:'Persona',planned:'Pianificato',budget:'Budget',remaining:'Rimanente',coverage:'Copertura',required_word:'richiesto',choose_off:'Scegli "Off" per rimuovere un turno, o trascina un turno con ⠿ in un\'altra cella (giorno o persona). Le modifiche vengono applicate immediatamente nel calendario sopra.',drag_hint_week:'Trascina il bordo superiore/inferiore di un turno per cambiare inizio/fine, trascina il turno su/giù per cambiare l\'orario, o trascinalo su un altro giorno per spostarlo (l\'orario segue il punto di rilascio; rilasciando in un giorno dove la persona già lavora i turni si scambiano). Clicca un turno per saltare alla sua cella nella tabella sottostante.',drag_hint_day:'Trascina il bordo sinistro/destro di un turno per cambiare inizio/fine, trascina il turno a sinistra/destra per cambiare l\'orario, su un\'altra riga per assegnarlo a un\'altra persona, o su una cella della tabella sottostante per spostarlo in un altro giorno. Clicca un turno per saltare alla sua cella nella tabella.' ,license_section:'Licenza',lang_name:'IT',DAY_NAMES:{Mon:'Lunedì',Tue:'Martedì',Wed:'Mercoledì',Thu:'Giovedì',Fri:'Venerdì',Sat:'Sabato',Sun:'Domenica'}
+    ,week_starting:'Inizio settimana (Lunedì)',day_start_time:'Ora inizio giorno',day_end_time:'Ora fine giorno',second_resource_starts_at:'2° risorsa inizia alle',people_required_before:'Persone richieste prima del 2° inizio',people_required_after:'Persone richieste dopo il 2° inizio',num_working_days:'Numero di giorni lavorativi a settimana',col_name:'Nome',col_hours:'Ore/settimana',col_maxshift:'Max turno',col_minshift:'Min turno',col_restdays:'Giorno di riposo',toggle_panel_title:'Mostra/nascondi pannello impostazioni',remove_title:'Rimuovi',change_color_title:'Clicca per cambiare colore',sample_title:'Sostituisci impostazioni, persone e piano con i dati di esempio'
+  }
+};
+let currentLang='en';
+function t(k){return (LOCALES[currentLang]&&LOCALES[currentLang][k])||LOCALES.en[k]||k;}
+function setLang(l){currentLang=l;document.getElementById('langToggle').textContent=LOCALES[l].lang_name||l; // update day names
+  DAY_NAMES=Object.assign({},LOCALES[l].DAY_NAMES);
+  // translate static nodes
+  document.getElementById('title').textContent=t('title');
+  document.getElementById('h2WeekSettings').textContent=t('week_settings');
+  document.getElementById('h2WorkingDays').textContent=t('working_days');
+  document.getElementById('h2People').textContent=t('people');
+  // translate settings labels and table headers
+  const map=[['lblWeekStarting','week_starting'],['lblDayStart','day_start_time'],['lblDayEnd','day_end_time'],['lblSecondStart','second_resource_starts_at'],['lblPeopleBefore','people_required_before'],['lblPeopleAfter','people_required_after'],['lblWdCount','num_working_days']];
+  map.forEach(([id,key])=>{const el=document.getElementById(id); if(el) el.textContent=t(key);});
+  const thmap=[['thName','col_name'],['thHours','col_hours'],['thMaxShift','col_maxshift'],['thMinShift','col_minshift'],['thRestDay','col_restdays']];
+  thmap.forEach(([id,key])=>{const el=document.getElementById(id); if(el) el.textContent=t(key);});
+  const rest=document.getElementById('restHint'); if(rest) rest.textContent=t('rest_hint');
+  // update titles and button tooltips
+  const toggle=document.getElementById('togglePanel'); if(toggle) toggle.title=t('toggle_panel_title');
+  const sample=document.getElementById('btnSample'); if(sample) sample.title=t('sample_title');
+  document.querySelectorAll('.swatch').forEach(s=>{s.title=t('change_color_title')});
+  document.querySelectorAll('[data-del]').forEach(d=>{d.title=t('remove_title')});
+  // header buttons
+  document.getElementById('btnOptimize').innerHTML='⚡ '+t('optimize');
+  document.getElementById('btnClear').textContent=t('clear_plan');
+  document.querySelectorAll('[data-view]').forEach(b=>{b.textContent=(b.dataset.view==='week')?t('view_week'):t('view_day');});
+  document.getElementById('btnSave').textContent='💾 '+t('save');
+  document.getElementById('btnLoad').textContent='📂 '+t('load');
+  document.getElementById('btnCSV').textContent='📊 '+t('export_csv');
+  document.getElementById('btnAddPerson').textContent=t('add_person');
+  document.getElementById('btnSample').textContent=t('load_sample');
+  // re-render to apply translated dynamic content
+  renderSettings();render();
+}
 const COLORS=['#2563eb','#16a34a','#d97706','#7c3aed','#db2777','#0891b2','#dc2626','#4b5563','#65a30d','#9333ea','#ea580c','#0d9488'];
 const LS_KEY='resource_planner_v1';
 
@@ -410,13 +453,13 @@ function renderPeople(){
   state.people.forEach(p=>{
     const tr=document.createElement('tr');tr.dataset.pid=p.id;
     const restOpts=['<option value="">—</option>'].concat(s.workingDays.map(d=>`<option value="${d}" ${p.restDay===d?'selected':''}>${d}</option>`)).join('');
-    tr.innerHTML=`<td><span class="swatch" style="background:${p.color}" title="Click to change colour"></span></td>
+    tr.innerHTML=`<td><span class="swatch" style="background:${p.color}" title="${t('change_color_title')}"></span></td>
       <td><input type="text" data-f="name" value="${esc(p.name)}"></td>
       <td><input type="number" data-f="weeklyHours" min="0" max="168" value="${p.weeklyHours}"></td>
       <td><input type="number" data-f="maxShift" min="1" max="24" value="${p.maxShift}"></td>
       <td><input type="number" data-f="minShift" min="1" max="24" value="${p.minShift}"></td>
       <td><select data-f="restDay">${restOpts}</select></td>
-      <td><button class="danger" data-del title="Remove">✕</button></td>`;
+      <td><button class="danger" data-del title="${t('remove_title')}">✕</button></td>`;
     tb.appendChild(tr);
   });
 }
@@ -435,7 +478,14 @@ function render(){
   renderStatus();
   const m=$('#mainCard');
   m.innerHTML=ui.view==='day'?dayHTML():weekHTML();
-  $('#tableCard').innerHTML='<h3>Planning table</h3>'+tableHTML();
+  $('#tableCard').innerHTML='<h3>'+t('planning_table')+'</h3>'+tableHTML();
+  // apply translations for dynamic hints/content
+  // translate hint texts inserted by week/day/table HTML
+  document.querySelectorAll('.hint').forEach(h=>{
+    if(h.parentElement && h.parentElement.classList.contains('week')) return; // keep specific ones
+  });
+  // ensure header/button translations remain
+  document.getElementById('langToggle').textContent=LOCALES[currentLang].lang_name;
 }
 function renderStatus(){
   const a=analyze(state.schedule),s=state.settings;
@@ -478,7 +528,7 @@ function weekHTML(){
     });
     out+='</div>';
   });
-  out+='</div><p class="hint">Drag the top/bottom edge of a shift to change its start/end, drag the shift up/down to change its time, or onto another day to move it (the time follows where you drop it; dropping on a day where the person already works swaps the two shifts). Click a shift to jump to its cell in the table below.</p>';
+  out+='</div><p class="hint">'+t('drag_hint_week')+'</p>';
   return out;
 }
 function dayHTML(){
@@ -495,14 +545,14 @@ function dayHTML(){
     if(sh){const l=(sh.start-s.windowStart)/H.length*100,w=(sh.end-sh.start)/H.length*100;out+=`<div class="bar" style="left:${l}%;width:${w}%;background:${p.color}" draggable="true" data-drag="${p.id}|${d}" data-edit="${p.id}|${d}"><div class="rz l" data-edge="start" data-axis="x" title="Drag to change start"></div><span class="lbl">${hh(sh.start)}–${hh(sh.end)} (${sh.end-sh.start}h)</span>${ot[p.id]?`<div class="ot">OT: ${ot[p.id]}h</div>`:''}<div class="rz r" data-edge="end" data-axis="x" title="Drag to change end"></div></div>`;}
     out+='</div></div>';
   });
-  out+=`<div class="covrow"><div class="name">Coverage / required</div><div class="cells" style="${cols}">${H.map(h=>`<div class="${covClass(cov[h],need(h))}">${cov[h]}/${need(h)}</div>`).join('')}</div></div>`;
-  out+='<p class="hint">Drag the left/right edge of a shift to change its start/end, drag the shift left/right to change its time, onto another row to give it to another person, or onto a cell of the table below to move it to another day. Click a shift to jump to its cell in the table.</p></div>';
+  out+=`<div class="covrow"><div class="name">${t('coverage')} / ${t('required_word')}</div><div class="cells" style="${cols}">${H.map(h=>`<div class="${covClass(cov[h],need(h))}">${cov[h]}/${need(h)}</div>`).join('')}</div></div>`;
+  out+='<p class="hint">'+t('drag_hint_day')+'</p></div>';
   return out;
 }
 function tableHTML(){
   const s=state.settings,H=hours(),wd=s.workingDays;
   const opt=(from,to,val)=>{let o='';for(let h=from;h<=to;h++)o+=`<option value="${h}" ${h===val?'selected':''}>${hh(h)}</option>`;return o;};
-  let out=`<table class="plan"><thead><tr><th>Person</th>${wd.map(d=>`<th>${DAY_NAMES[d]}<br><small>${dateOf(d)}</small></th>`).join('')}<th>Planned</th><th>Budget</th><th>Remaining</th></tr></thead><tbody>`;
+  let out=`<table class="plan"><thead><tr><th>${t('person')}</th>${wd.map(d=>`<th>${DAY_NAMES[d]}<br><small>${dateOf(d)}</small></th>`).join('')}${'<th>'+t('planned')+'</th><th>'+t('budget')+'</th><th>'+t('remaining')+'</th>'}</tr></thead><tbody>`;
   state.people.forEach(p=>{
     const tot=assignedHours(state.schedule,p),rem=p.weeklyHours-tot;
     out+=`<tr><td class="name"><span class="swatch" style="background:${p.color}"></span> ${esc(p.name)}<br><small class="hint">max ${p.maxShift}h · min ${p.minShift}h</small></td>`;
@@ -517,10 +567,10 @@ function tableHTML(){
     });
     out+=`<td class="tot">${tot}h</td><td>${p.weeklyHours}h</td><td class="tot ${rem<0?'neg':''}">${rem}h</td></tr>`;
   });
-  out+='</tbody><tfoot><tr><td class="name">Coverage</td>';
+  out+='</tbody><tfoot><tr><td class="name">'+t('coverage')+'</td>';
   wd.forEach(d=>{const cov=coverage(state.schedule,d);let g=0,o=0;H.forEach(h=>{const n=need(h);if(cov[h]<n)g+=n-cov[h];else o+=cov[h]-n;});
     out+=`<td><span class="pill ${g?'bad':o?'warn':'ok'}">${g?g+' gap h':'covered'}</span>${o?`<div class="hint">+${o}h over</div>`:''}</td>`;});
-  out+='<td colspan="3"></td></tr></tfoot></table><p class="hint">Choose "Off" to remove a shift, or drag a shift with ⠿ to another cell (day or person). Changes are reflected immediately in the calendar above. Blue cells are preferred rest days.</p>';
+  out+='<td colspan="3"></td></tr></tfoot></table><p class="hint">'+t('choose_off')+'</p>';
   return out;
 }
 
@@ -584,6 +634,9 @@ function bind(){
   });
   $('#btnAddPerson').onclick=()=>{const i=state.people.length;const p={id:uid(),name:'Person '+(i+1),weeklyHours:40,maxShift:8,minShift:4,restDay:null,color:COLORS[i%COLORS.length]};state.people.push(p);state.schedule[p.id]={};persist();renderPeople();render();};
   $('#btnSample').onclick=()=>{if(confirm('Replace current settings, people and plan with the sample data?')){state=sampleState();ui.day=null;persist();renderSettings();render();}};
+
+  // language toggle
+  $('#langToggle').onclick=()=>{setLang(currentLang==='en'?'it':'en');};
 
   // main card: table edits, day nav, bar clicks
   const main=document.querySelector('main');
@@ -669,6 +722,7 @@ function bind(){
 /* ---------- init ---------- */
 state=restore()||sampleState();
 bind();renderSettings();render();
+setLang(currentLang);
 })();
 </script>
 </body>
