@@ -34,3 +34,7 @@ The current state is also kept in the browser's local storage, so closing the ta
 ## Colour legend
 - green – required headcount met · red – under-staffed · amber – over-staffed
 - blue table cell – preferred rest day · red outline – shift violates that person's min/max shift or the day window
+
+## License
+
+This project is licensed under the MIT License — see the `LICENSE` file for details. You are free to use, modify, and distribute this code (including commercially), provided that you include the copyright notice and license text in any copies or substantial portions of the work.
