@@ -36,6 +36,16 @@ class StaticContractTests(unittest.TestCase):
         self.assertIn("function saveJSON()", HTML)
         self.assertIn("function exportCSV()", HTML)
 
+    def test_dragging_shows_exact_time_preview(self):
+        self.assertIn("function dragStartAt(t,e)", HTML)
+        self.assertIn("function showDropPreview(t,start)", HTML)
+        self.assertIn("preview.className='drop-preview'", HTML)
+        self.assertIn("preview.textContent=hh(start)+'–'+hh(start+dragSrc.len)", HTML)
+        self.assertIn("const newStart=dragStartAt(t,e)", HTML)
+
+    def test_resize_hinges_do_not_trigger_shift_move(self):
+        self.assertIn("if(e.target.closest('.rz')){e.preventDefault();return;}", HTML)
+
     def test_recipient_mode_is_read_only(self):
         self.assertIn(".from('week_assignments').select", HTML)
         self.assertNotRegex(HTML, r"assignmentId[\s\S]{0,500}\.update\(")

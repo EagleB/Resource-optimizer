@@ -48,6 +48,8 @@
   .days{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
   .days label{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);cursor:pointer;background:#fff}
   .days label.on{background:#dbeafe;border-color:var(--accent)}
+  .rule-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0;padding:6px;border:1px solid var(--border);border-radius:6px}
+  .rule-row .days{margin-top:0}
 
   table.people{width:100%;border-collapse:collapse;font-size:13px}
   table.people th{font-weight:600;color:var(--muted);font-size:11px;text-align:left;padding:4px 3px}
@@ -136,6 +138,9 @@
   .hint{font-size:12px;color:var(--muted)}
   .bar[draggable]{cursor:grab}
   .dropok{outline:3px dashed var(--accent);outline-offset:-3px;background-color:#eff6ff!important}
+  .drop-preview{position:absolute;z-index:4;pointer-events:none;border:2px solid var(--accent);border-radius:4px;background:rgba(37,99,235,.24);box-shadow:0 0 0 2px rgba(255,255,255,.8) inset;display:flex;align-items:center;justify-content:center;color:#1e3a8a;font-size:11px;font-weight:700;text-shadow:0 1px 0 rgba(255,255,255,.9)}
+  .daycol .drop-preview{left:2px;right:2px}
+  .track .drop-preview{top:3px;bottom:3px}
   .grip{cursor:grab;color:var(--muted);font-size:16px;padding:0 4px;user-select:none}
   .grip:hover{color:var(--accent)}
   .dragging{opacity:.4}
@@ -202,6 +207,13 @@
     <div class="field"><label id="lblWdCount">Number of working days per week</label><input type="number" id="wdCount" min="1" max="7"></div>
     <div class="days" id="wdBoxes"></div>
 
+    <h2 id="h2Rules" data-i18n="rules_section">Additional optimization parameters</h2>
+    <p class="hint" id="rulesHint">Define extra required-staffing rules for specific days/hours (e.g. "3 people on Sat/Sun", "1 person 18:00–close"). These combine with the base requirements above by taking the higher value.</p>
+    <div id="rulesList"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button id="btnAddRule">+ Add rule</button>
+    </div>
+
     <h2 id="h2People" data-i18n="people">People</h2>
     <table class="people">
       <thead><tr><th></th><th id="thName">Name</th><th id="thEmail">Email</th><th id="thHours">Hours/week</th><th id="thMaxShift">Max shift</th><th id="thMinShift">Min shift</th><th id="thRestDay">Rest day</th><th></th></tr></thead>
@@ -232,11 +244,13 @@ let DAY_NAMES={Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Fr
 const LOCALES={
   en:{
     title:'Weekly Resource Planner',optimize:'Optimize',clear_plan:'Clear plan',view_week:'Week',view_day:'Day',save:'Save plan (.json)',load:'Load plan',export_csv:'Export Excel (.csv)',week_settings:'Week settings',working_days:'Working days',people:'People',add_person:'+ Add person',load_sample:'Load sample',rest_hint:'Rest day is a preference: the optimizer honours it unless it is the only way to close a coverage gap (then it is flagged).',planning_table:'Planning table',person:'Person',planned:'Planned',budget:'Budget',remaining:'Remaining',coverage:'Coverage',required_word:'required',choose_off:'Choose "Off" to remove a shift, or drag a shift with ⠿ to another cell (day or person). Changes are reflected immediately in the calendar above. Blue cells are preferred rest days.',drag_hint_week:'Drag the top/bottom edge of a shift to change its start/end, drag the shift up/down to change its time, or onto another day to move it (the time follows where you drop it; dropping on a day where the person already works swaps the two shifts). Click a shift to jump to its cell in the table below.',drag_hint_day:'Drag the left/right edge of a shift to change its start/end, drag the shift left/right to change its time, onto another row to give it to another person, or onto a cell of the table below to move it to another day. Click a shift to jump to its cell in the table.' ,license_section:'License',lang_name:'EN',DAY_NAMES:{Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'},
-    week_starting:'Week starting (Monday)',day_start_time:'Day start time',day_end_time:'Day end time',second_resource_starts_at:'2nd resource starts at',people_required_before:'People required before 2nd start',people_required_after:'People required after 2nd start',num_working_days:'Number of working days per week',col_name:'Name',col_hours:'Hours/week',col_maxshift:'Max shift',col_minshift:'Min shift',col_restdays:'Rest day',toggle_panel_title:'Show/hide setup panel',remove_title:'Remove',change_color_title:'Click to change colour',sample_title:'Replace everything with the sample data'
+    week_starting:'Week starting (Monday)',day_start_time:'Day start time',day_end_time:'Day end time',second_resource_starts_at:'2nd resource starts at',people_required_before:'People required before 2nd start',people_required_after:'People required after 2nd start',num_working_days:'Number of working days per week',col_name:'Name',col_hours:'Hours/week',col_maxshift:'Max shift',col_minshift:'Min shift',col_restdays:'Rest day',toggle_panel_title:'Show/hide setup panel',remove_title:'Remove',change_color_title:'Click to change colour',sample_title:'Replace everything with the sample data',
+    rules_section:'Additional optimization parameters',rules_hint:'Define extra required-staffing rules for specific days/hours (e.g. "3 people on Sat/Sun", "1 person 18:00–close"). These combine with the base requirements above by taking the higher value.',add_rule:'+ Add rule',remove_rule_confirm:'Remove this rule?'
   },
   it:{
     title:'Pianificatore Risorse Settimanale',optimize:'Ottimizza',clear_plan:'Azzera piano',view_week:'Settimana',view_day:'Giorno',save:'Salva piano (.json)',load:'Carica piano',export_csv:'Esporta Excel (.csv)',week_settings:'Impostazioni settimana',working_days:'Giorni lavorativi',people:'Persone',add_person:'+ Aggiungi persona',load_sample:'Carica esempio',rest_hint:'Il giorno di riposo è una preferenza: l\'ottimizzatore la rispetta a meno che sia l\'unico modo per coprire una lacuna.',planning_table:'Tabella di pianificazione',person:'Persona',planned:'Pianificato',budget:'Budget',remaining:'Rimanente',coverage:'Copertura',required_word:'richiesto',choose_off:'Scegli "Off" per rimuovere un turno, o trascina un turno con ⠿ in un\'altra cella (giorno o persona). Le modifiche vengono applicate immediatamente nel calendario sopra.',drag_hint_week:'Trascina il bordo superiore/inferiore di un turno per cambiare inizio/fine, trascina il turno su/giù per cambiare l\'orario, o trascinalo su un altro giorno per spostarlo (l\'orario segue il punto di rilascio; rilasciando in un giorno dove la persona già lavora i turni si scambiano). Clicca un turno per saltare alla sua cella nella tabella sottostante.',drag_hint_day:'Trascina il bordo sinistro/destro di un turno per cambiare inizio/fine, trascina il turno a sinistra/destra per cambiare l\'orario, su un\'altra riga per assegnarlo a un\'altra persona, o su una cella della tabella sottostante per spostarlo in un altro giorno. Clicca un turno per saltare alla sua cella nella tabella.' ,license_section:'Licenza',lang_name:'IT',DAY_NAMES:{Mon:'Lunedì',Tue:'Martedì',Wed:'Mercoledì',Thu:'Giovedì',Fri:'Venerdì',Sat:'Sabato',Sun:'Domenica'}
     ,week_starting:'Inizio settimana (Lunedì)',day_start_time:'Ora inizio giorno',day_end_time:'Ora fine giorno',second_resource_starts_at:'2° risorsa inizia alle',people_required_before:'Persone richieste prima del 2° inizio',people_required_after:'Persone richieste dopo il 2° inizio',num_working_days:'Numero di giorni lavorativi a settimana',col_name:'Nome',col_hours:'Ore/settimana',col_maxshift:'Max turno',col_minshift:'Min turno',col_restdays:'Giorno di riposo',toggle_panel_title:'Mostra/nascondi pannello impostazioni',remove_title:'Rimuovi',change_color_title:'Clicca per cambiare colore',sample_title:'Sostituisci impostazioni, persone e piano con i dati di esempio'
+    ,rules_section:'Parametri di ottimizzazione aggiuntivi',rules_hint:'Definisci regole di personale aggiuntive per giorni/orari specifici (es. "3 persone sabato e domenica", "1 persona dalle 18:00 alla chiusura"). Si combinano con i requisiti base sopra prendendo il valore più alto.',add_rule:'+ Aggiungi regola',remove_rule_confirm:'Rimuovere questa regola?'
   }
 };
 let currentLang='en';
@@ -247,6 +261,7 @@ function setLang(l){currentLang=l;document.getElementById('langToggle').textCont
   document.getElementById('title').textContent=t('title');
   document.getElementById('h2WeekSettings').textContent=t('week_settings');
   document.getElementById('h2WorkingDays').textContent=t('working_days');
+  document.getElementById('h2Rules').textContent=t('rules_section');
   document.getElementById('h2People').textContent=t('people');
   // translate settings labels and table headers
   const map=[['lblWeekStarting','week_starting'],['lblDayStart','day_start_time'],['lblDayEnd','day_end_time'],['lblSecondStart','second_resource_starts_at'],['lblPeopleBefore','people_required_before'],['lblPeopleAfter','people_required_after'],['lblWdCount','num_working_days']];
@@ -254,11 +269,14 @@ function setLang(l){currentLang=l;document.getElementById('langToggle').textCont
   const thmap=[['thName','col_name'],['thHours','col_hours'],['thMaxShift','col_maxshift'],['thMinShift','col_minshift'],['thRestDay','col_restdays']];
   thmap.forEach(([id,key])=>{const el=document.getElementById(id); if(el) el.textContent=t(key);});
   const rest=document.getElementById('restHint'); if(rest) rest.textContent=t('rest_hint');
+  const rulesHint=document.getElementById('rulesHint'); if(rulesHint) rulesHint.textContent=t('rules_hint');
+  const addRule=document.getElementById('btnAddRule'); if(addRule) addRule.textContent=t('add_rule');
   // update titles and button tooltips
   const toggle=document.getElementById('togglePanel'); if(toggle) toggle.title=t('toggle_panel_title');
   const sample=document.getElementById('btnSample'); if(sample) sample.title=t('sample_title');
   document.querySelectorAll('.swatch').forEach(s=>{s.title=t('change_color_title')});
   document.querySelectorAll('[data-del]').forEach(d=>{d.title=t('remove_title')});
+  document.querySelectorAll('[data-rdel]').forEach(d=>{d.title=t('remove_title')});
   // header buttons
   document.getElementById('btnOptimize').innerHTML='⚡ '+t('optimize');
   document.getElementById('btnClear').textContent=t('clear_plan');
@@ -290,7 +308,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 function sampleState(){
   const mk=(name,h,mx,mn,rest,i)=>({id:uid(),name,email:'',weeklyHours:h,maxShift:mx,minShift:mn,restDay:rest,color:COLORS[i%COLORS.length]});
   const st={version:1,
-    settings:{windowStart:8,windowEnd:20,secondStart:10,headcountBefore:1,headcountAfter:2,workingDays:['Mon','Tue','Wed','Thu','Fri'],weekLabel:''},
+    settings:{windowStart:8,windowEnd:20,secondStart:10,headcountBefore:1,headcountAfter:2,workingDays:['Mon','Tue','Wed','Thu','Fri'],weekLabel:'',rules:[]},
     people:[mk('Anna',40,8,4,null,0),mk('Marco',40,8,4,null,1),mk('Luca',32,8,4,'Wed',2),mk('Giulia',24,6,4,'Fri',3)],
     schedule:{}};
   return st;
@@ -302,6 +320,10 @@ function normalize(st){
   s.headcountBefore=clamp(+s.headcountBefore||0,0,50); s.headcountAfter=clamp(+s.headcountAfter||0,0,50);
   s.workingDays=DAYS.filter(d=>(s.workingDays||[]).includes(d)); if(!s.workingDays.length) s.workingDays=['Mon'];
   s.weekLabel=s.weekLabel||'';
+  s.rules=(Array.isArray(s.rules)?s.rules:[]).map(r=>{
+    const start=clamp(+r.start||0,0,23),end=clamp(+r.end||start+1,start+1,24);
+    return {id:r.id||uid(),days:DAYS.filter(d=>(r.days||[]).includes(d)),start,end,count:clamp(+r.count||0,0,50)};
+  });
   st.settings=s;
   st.people=(st.people||[]).map((p,i)=>({id:p.id||uid(),name:p.name||('Person '+(i+1)),email:String(p.email||'').trim().toLowerCase(),weeklyHours:+p.weeklyHours||0,maxShift:+p.maxShift||8,minShift:+p.minShift||1,restDay:p.restDay||null,color:p.color||COLORS[i%COLORS.length]}));
   st.people.forEach(p=>{p.minShift=clamp(p.minShift,1,24);p.maxShift=clamp(p.maxShift,p.minShift,24);});
@@ -314,7 +336,9 @@ function persist(){ try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catc
 function restore(){ try{const j=localStorage.getItem(LS_KEY); if(j) return normalize(JSON.parse(j));}catch(e){} return null; }
 
 function hours(){const s=state.settings,a=[];for(let h=s.windowStart;h<s.windowEnd;h++)a.push(h);return a;}
-function need(h){const s=state.settings;return h<s.secondStart?s.headcountBefore:s.headcountAfter;}
+// custom rules only ever raise the requirement for a (day,hour) cell — combined via max, never subtractive or order-dependent
+function ruleReqFor(day,h){let n=0;state.settings.rules.forEach(r=>{if(r.days.includes(day)&&h>=r.start&&h<r.end)n=Math.max(n,r.count);});return n;}
+function need(day,h){const s=state.settings,base=h<s.secondStart?s.headcountBefore:s.headcountAfter;return Math.max(base,ruleReqFor(day,h));}
 function getShift(sched,pid,day){return (sched[pid]||{})[day]||null;}
 function coverage(sched,day){const cov={};hours().forEach(h=>cov[h]=0);state.people.forEach(p=>{const sh=getShift(sched,p.id,day);if(sh)for(let h=sh.start;h<sh.end;h++)if(h in cov)cov[h]++;});return cov;}
 function moveShift(fromPid,fromDay,toPid,toDay,newStart){
@@ -339,9 +363,22 @@ function analyze(sched){
   const r={uncovered:0,over:0,unused:0,restViol:0,hard:0,warnings:[],perDay:{},demand:0,budget:0};
   s.workingDays.forEach(d=>{
     const cov=coverage(sched,d); let g=0,o=0;
-    H.forEach(h=>{const n=need(h);r.demand+=n;if(cov[h]<n)g+=n-cov[h];else if(cov[h]>n)o+=cov[h]-n;});
+    H.forEach(h=>{const n=need(d,h);r.demand+=n;if(cov[h]<n)g+=n-cov[h];else if(cov[h]>n)o+=cov[h]-n;});
     r.uncovered+=g;r.over+=o;r.perDay[d]={gaps:g,over:o};
     if(g)r.warnings.push({t:`${DAY_NAMES[d]}: ${g} uncovered person-hour${g>1?'s':''}`,hard:true});
+  });
+  s.rules.forEach(rule=>{
+    rule.days.forEach(d=>{
+      if(!s.workingDays.includes(d))return;
+      const cov=coverage(sched,d);
+      for(let h=rule.start;h<rule.end;h++){
+        if(cov[h]<rule.count){
+          r.hard++;
+          r.warnings.push({t:`${DAY_NAMES[d]} ${hh(rule.start)}-${hh(rule.end)}: rule requires ${rule.count}, understaffed at ${hh(h)} (${cov[h]})`,hard:true});
+          break;
+        }
+      }
+    });
   });
   state.people.forEach(p=>{
     const a=assignedHours(sched,p); r.budget+=p.weeklyHours;
@@ -368,7 +405,13 @@ function objective(sched){
       if(len>p.maxShift||len<p.minShift||sh.start<s.windowStart||sh.end>s.windowEnd)hard++;
       if(p.restDay===d)rest++;
       for(let h=sh.start;h<sh.end;h++)if(h in cov)cov[h]++;}
-    for(const h of H){const n=need(h);if(cov[h]<n){unc+=n-cov[h];if(cov[h]===0&&n>0)unc+=1;}else over+=cov[h]-n;} // an hour with nobody at all costs extra
+    for(const h of H){
+      const ruleReq=ruleReqFor(d,h),base=h<s.secondStart?s.headcountBefore:s.headcountAfter,n=Math.max(base,ruleReq);
+      if(cov[h]<n){
+        if(ruleReq>base)hard++; // unmet custom rule: hard constraint
+        else{unc+=n-cov[h];if(cov[h]===0&&n>0)unc+=1;} // an hour with nobody at all costs extra
+      }else over+=cov[h]-n;
+    }
   }
   for(const p of state.people){const u=used[p.id]||0;if(u>p.weeklyHours)hard++;else unused+=p.weeklyHours-u;}
   return hard*100000+unc*1000+over*10+unused+rest*5;
@@ -391,7 +434,7 @@ function optimize(){
     if(iter%2===0)order.forEach(d=>H.forEach(h=>slots.push([d,h]))); else H.forEach(h=>order.forEach(d=>slots.push([d,h])));
     for(const [day,h] of slots){
       const c=cov[day];let guard=0;
-      while(c[h]<need(h)&&guard++<20){
+      while(c[h]<need(day,h)&&guard++<20){
         const cands=people.filter(p=>p.restDay!==day&&!sched[p.id][day]&&rem[p.id]>=p.minShift);
         if(!cands.length)break;
         const sc=new Map();cands.forEach(x=>sc.set(x.id,(rem[x.id]/Math.max(1,x.weeklyHours))*10-worked[x.id]*1.5+(iter>1?rnd()*5:rnd()*0.01)));
@@ -401,7 +444,7 @@ function optimize(){
         if(s.windowEnd-start<p.minShift)start=Math.max(s.windowStart,s.windowEnd-p.minShift);
         const cap=Math.min(p.maxShift,rem[p.id],s.windowEnd-start);
         if(cap<p.minShift)break;
-        let last=-1;for(let k=0;k<cap;k++){const x=start+k;if(c[x]<need(x))last=k;}
+        let last=-1;for(let k=0;k<cap;k++){const x=start+k;if(c[x]<need(day,x))last=k;}
         let L=Math.max(last<0?p.minShift:last+1,p.minShift);
         if(iter>1&&rnd()<0.25)L=L+1+Math.floor(rnd()*2);
         L=Math.min(L,cap);
@@ -472,7 +515,22 @@ function renderSettings(){
   $('#wdCount').value=s.workingDays.length;
   const box=$('#wdBoxes');box.innerHTML='';
   DAYS.forEach(d=>{const on=s.workingDays.includes(d);const l=document.createElement('label');l.className=on?'on':'';l.innerHTML=`<input type="checkbox" data-day="${d}" ${on?'checked':''}> ${d}`;box.appendChild(l);});
+  renderRules();
   renderPeople();
+}
+function renderRules(){
+  const box=$('#rulesList');box.innerHTML='';
+  state.settings.rules.forEach(r=>{
+    const div=document.createElement('div');div.className='rule-row';div.dataset.rid=r.id;
+    div.innerHTML=`<div class="days">${DAYS.map(d=>`<label class="${r.days.includes(d)?'on':''}"><input type="checkbox" data-rf="day" data-day="${d}" ${r.days.includes(d)?'checked':''}> ${d}</label>`).join('')}</div>
+      <select data-rf="start"></select><span>–</span><select data-rf="end"></select>
+      <input type="number" data-rf="count" min="0" max="50" value="${r.count}" style="width:60px">
+      <button class="danger" data-rdel title="${t('remove_title')}">✕</button>`;
+    box.appendChild(div);
+    const startSel=div.querySelector('[data-rf=start]'),endSel=div.querySelector('[data-rf=end]');
+    fillHourSelect(startSel,0,23);startSel.value=r.start;
+    fillHourSelect(endSel,1,24);endSel.value=r.end;
+  });
 }
 function renderPeople(){
   const s=state.settings,tb=$('#peopleBody');tb.innerHTML='';
@@ -545,7 +603,7 @@ function weekHTML(){
     const on=s.workingDays.includes(d);
     const cov=coverage(state.schedule,d);
     out+=`<div class="daycol ${on?'':'off'}" style="height:${H.length*RH}px" ${on?`data-drop="*|${d}" data-axis="y"`:''}>`;
-    if(on)out+=H.map(h=>`<div class="hrow ${covClass(cov[h],need(h))}" title="${hh(h)}: ${cov[h]} / ${need(h)} required"></div>`).join('');
+    if(on)out+=H.map(h=>`<div class="hrow ${covClass(cov[h],need(d,h))}" title="${hh(h)}: ${cov[h]} / ${need(d,h)} required"></div>`).join('');
     const shifts=state.people.map(p=>({p,sh:getShift(state.schedule,p.id,d)})).filter(x=>x.sh);
     const n=lanes(shifts)||1;
     shifts.forEach(x=>{
@@ -572,7 +630,7 @@ function dayHTML(){
     if(sh){const l=(sh.start-s.windowStart)/H.length*100,w=(sh.end-sh.start)/H.length*100;out+=`<div class="bar" style="left:${l}%;width:${w}%;background:${p.color}" draggable="true" data-drag="${p.id}|${d}" data-edit="${p.id}|${d}"><div class="rz l" data-edge="start" data-axis="x" title="Drag to change start"></div><span class="lbl">${hh(sh.start)}–${hh(sh.end)} (${sh.end-sh.start}h)</span>${ot[p.id]?`<div class="ot">OT: ${ot[p.id]}h</div>`:''}<div class="rz r" data-edge="end" data-axis="x" title="Drag to change end"></div></div>`;}
     out+='</div></div>';
   });
-  out+=`<div class="covrow"><div class="name">${t('coverage')} / ${t('required_word')}</div><div class="cells" style="${cols}">${H.map(h=>`<div class="${covClass(cov[h],need(h))}">${cov[h]}/${need(h)}</div>`).join('')}</div></div>`;
+  out+=`<div class="covrow"><div class="name">${t('coverage')} / ${t('required_word')}</div><div class="cells" style="${cols}">${H.map(h=>`<div class="${covClass(cov[h],need(d,h))}">${cov[h]}/${need(d,h)}</div>`).join('')}</div></div>`;
   out+='<p class="hint">'+t('drag_hint_day')+'</p></div>';
   return out;
 }
@@ -595,7 +653,7 @@ function tableHTML(){
     out+=`<td class="tot">${tot}h</td><td>${p.weeklyHours}h</td><td class="tot ${rem<0?'neg':''}">${rem}h</td></tr>`;
   });
   out+='</tbody><tfoot><tr><td class="name">'+t('coverage')+'</td>';
-  wd.forEach(d=>{const cov=coverage(state.schedule,d);let g=0,o=0;H.forEach(h=>{const n=need(h);if(cov[h]<n)g+=n-cov[h];else o+=cov[h]-n;});
+  wd.forEach(d=>{const cov=coverage(state.schedule,d);let g=0,o=0;H.forEach(h=>{const n=need(d,h);if(cov[h]<n)g+=n-cov[h];else o+=cov[h]-n;});
     out+=`<td><span class="pill ${g?'bad':o?'warn':'ok'}">${g?g+' gap h':'covered'}</span>${o?`<div class="hint">+${o}h over</div>`:''}</td>`;});
   out+='<td colspan="3"></td></tr></tfoot></table><p class="hint">'+t('choose_off')+'</p>';
   return out;
@@ -609,6 +667,7 @@ function exportCSV(){
   const rows=[['sep=;']];
   rows.push(['Weekly plan',s.weekLabel?'Week of '+s.weekLabel:'']);
   rows.push(['Day window',hh(s.windowStart)+'-'+hh(s.windowEnd),'2nd resource from',hh(s.secondStart),'Required before/after',s.headcountBefore+'/'+s.headcountAfter]);
+  if(s.rules.length)rows.push(['Additional rules',s.rules.map(r=>`${r.days.join('/')} ${hh(r.start)}-${hh(r.end)}:${r.count}`).join('; ')]);
   rows.push([]);
   rows.push(['Person',...wd.map(d=>DAY_NAMES[d]+(dateOf(d)?' '+dateOf(d):'')),'Planned h','Budget h','Remaining h','Max shift','Min shift','Rest day']);
   state.people.forEach(p=>{const t=assignedHours(state.schedule,p);
@@ -616,7 +675,7 @@ function exportCSV(){
   rows.push([]);
   rows.push(['Hourly coverage (present/required)',...wd.map(d=>DAY_NAMES[d])]);
   const covs={};wd.forEach(d=>covs[d]=coverage(state.schedule,d));
-  H.forEach(h=>rows.push([hh(h)+'-'+hh(h+1),...wd.map(d=>covs[d][h]+'/'+need(h))]));
+  H.forEach(h=>rows.push([hh(h)+'-'+hh(h+1),...wd.map(d=>covs[d][h]+'/'+need(d,h))]));
   const csv='﻿'+rows.map((r,i)=>i===0?r[0]:r.map(q).join(';')).join('\r\n');
   download(fileStem()+'.csv',csv,'text/csv;charset=utf-8');
 }
@@ -741,6 +800,29 @@ function bind(){
   $('#wdCount').addEventListener('change',e=>{const n=clamp(+e.target.value||1,1,7);state.settings.workingDays=DAYS.slice(0,n);persist();renderSettings();render();});
   $('#wdBoxes').addEventListener('change',()=>{const sel=[...document.querySelectorAll('#wdBoxes input:checked')].map(i=>i.dataset.day);if(!sel.length){renderSettings();return;}state.settings.workingDays=DAYS.filter(d=>sel.includes(d));state.people.forEach(p=>{if(p.restDay&&!state.settings.workingDays.includes(p.restDay))p.restDay=null;});persist();renderSettings();render();});
 
+  // additional optimization rules
+  $('#btnAddRule').onclick=()=>{
+    state.settings.rules.push({id:uid(),days:[...state.settings.workingDays],start:state.settings.windowStart,end:state.settings.windowEnd,count:1});
+    persist();renderRules();render();
+  };
+  $('#rulesList').addEventListener('change',e=>{
+    const row=e.target.closest('.rule-row');if(!row)return;
+    const r=state.settings.rules.find(x=>x.id===row.dataset.rid);if(!r)return;
+    const f=e.target.dataset.rf;
+    if(f==='day'){const sel=[...row.querySelectorAll('[data-rf=day]:checked')].map(i=>i.dataset.day);r.days=DAYS.filter(d=>sel.includes(d));}
+    else if(f==='start'){r.start=+e.target.value;if(r.end<=r.start)r.end=r.start+1;}
+    else if(f==='end'){r.end=+e.target.value;if(r.end<=r.start)r.start=Math.max(0,r.end-1);}
+    else if(f==='count'){r.count=clamp(+e.target.value||0,0,50);}
+    persist();renderRules();render();
+  });
+  $('#rulesList').addEventListener('click',e=>{
+    if(!e.target.matches('[data-rdel]'))return;
+    const row=e.target.closest('.rule-row');const r=state.settings.rules.find(x=>x.id===row.dataset.rid);
+    if(!r||!confirm(t('remove_rule_confirm')))return;
+    state.settings.rules=state.settings.rules.filter(x=>x!==r);
+    persist();renderRules();render();
+  });
+
   // people
   $('#peopleBody').addEventListener('change',e=>{
     const tr=e.target.closest('tr');if(!tr)return;const p=state.people.find(x=>x.id===tr.dataset.pid);if(!p)return;
@@ -816,7 +898,26 @@ function bind(){
 
   // drag & drop: move a shift to another day (week view / table cell) or another person (table cell)
   let dragSrc=null;
+  function clearDropFeedback(){main.querySelectorAll('.dropok').forEach(x=>x.classList.remove('dropok'));main.querySelectorAll('.drop-preview').forEach(x=>x.remove());}
+  function dragStartAt(t,e){
+    if(!dragSrc||!t.dataset.axis)return null;
+    const s=state.settings,H=hours(),r=t.getBoundingClientRect();
+    const slot=t.dataset.axis==='y'?Math.floor((e.clientY-r.top)/(r.height/H.length))-dragSrc.offY:Math.floor((e.clientX-r.left)/(r.width/H.length))-dragSrc.offX;
+    return clamp(s.windowStart+slot,s.windowStart,Math.max(s.windowStart,s.windowEnd-dragSrc.len));
+  }
+  function showDropPreview(t,start){
+    main.querySelectorAll('.drop-preview').forEach(x=>x.remove());
+    if(start==null)return;
+    const s=state.settings,H=hours(),preview=document.createElement('div');
+    preview.className='drop-preview';preview.setAttribute('aria-hidden','true');preview.textContent=hh(start)+'–'+hh(start+dragSrc.len);
+    if(t.dataset.axis==='y'){preview.style.top=((start-s.windowStart)*RH+1)+'px';preview.style.height=(dragSrc.len*RH-2)+'px';}
+    else{preview.style.left=((start-s.windowStart)/H.length*100)+'%';preview.style.width=(dragSrc.len/H.length*100)+'%';}
+    t.appendChild(preview);
+  }
   main.addEventListener('dragstart',e=>{
+    // Resize hinges belong exclusively to the pointer-based resize gesture.
+    // Never let their draggable parent turn the same action into a shift move.
+    if(e.target.closest('.rz')){e.preventDefault();return;}
     const el=e.target.closest('[data-drag]');if(!el)return;
     const bar=el.closest('.bar'),r=el.getBoundingClientRect();
     const [pid,day]=el.dataset.drag.split('|');const sh=getShift(state.schedule,pid,day)||{start:0,end:1};
@@ -826,21 +927,20 @@ function bind(){
     e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragSrc.key);
     (bar||el.closest('td')).classList.add('dragging');
   });
-  main.addEventListener('dragend',()=>{dragSrc=null;main.querySelectorAll('.dragging,.dropok').forEach(x=>x.classList.remove('dragging','dropok'));});
+  main.addEventListener('dragend',()=>{dragSrc=null;main.querySelectorAll('.dragging').forEach(x=>x.classList.remove('dragging'));clearDropFeedback();});
   main.addEventListener('dragover',e=>{
     const t=e.target.closest('[data-drop]');if(!t||!dragSrc)return;
     e.preventDefault();e.dataTransfer.dropEffect='move';
-    main.querySelectorAll('.dropok').forEach(x=>{if(x!==t)x.classList.remove('dropok');});t.classList.add('dropok');
+    main.querySelectorAll('.dropok').forEach(x=>{if(x!==t)x.classList.remove('dropok');});t.classList.add('dropok');showDropPreview(t,dragStartAt(t,e));
   });
-  main.addEventListener('dragleave',e=>{const t=e.target.closest('[data-drop]');if(t&&!t.contains(e.relatedTarget))t.classList.remove('dropok');});
+  main.addEventListener('dragleave',e=>{const t=e.target.closest('[data-drop]');if(t&&!t.contains(e.relatedTarget)){t.classList.remove('dropok');t.querySelector('.drop-preview')?.remove();}});
   main.addEventListener('drop',e=>{
     const t=e.target.closest('[data-drop]');if(!t||!dragSrc)return;
     e.preventDefault();
     const [fromPid,fromDay]=dragSrc.key.split('|');let [toPid,toDay]=t.dataset.drop.split('|');
     if(toPid==='*')toPid=fromPid;
-    const H=hours(),r=t.getBoundingClientRect();let newStart=null;
-    if(t.dataset.axis==='y')newStart=state.settings.windowStart+Math.floor((e.clientY-r.top)/(r.height/H.length))-dragSrc.offY;
-    else if(t.dataset.axis==='x')newStart=state.settings.windowStart+Math.floor((e.clientX-r.left)/(r.width/H.length))-dragSrc.offX;
+    const newStart=dragStartAt(t,e);
+    clearDropFeedback();
     moveShift(fromPid,fromDay,toPid,toDay,newStart);
   });
 }

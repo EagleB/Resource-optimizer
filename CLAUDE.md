@@ -36,6 +36,12 @@ present. When editing `resource_planner.html` or the migration, keep the literal
 check for (element ids like `btnSignIn`/`cloudWeeks`/`btnPublish`, function signatures like
 `function saveJSON()`, specific SQL clauses) or update the test alongside the change.
 
+Never call a test "passing" or a fix "done" from a single run or a read-through. Re-run the full
+suite after the change, confirm the specific test that motivated the change actually exercises the
+new behavior (not just green by coincidence), and check for side effects in unrelated tests. For
+manual/UI verification, actually load the page and click through the affected flow — don't infer
+success from the diff alone.
+
 To manually exercise the app: serve the directory (e.g. `python3 -m http.server 8000`) and open
 `http://localhost:8000/resource_planner.html`, or just open the file directly for offline mode.
 
