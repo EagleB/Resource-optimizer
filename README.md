@@ -32,6 +32,8 @@ Rest day is a preference: it is honoured unless it is the only way to close a co
 4. **Save plan (.json)** to keep the whole plan (settings, people, shifts); **Load plan** re-imports it later.
 5. **Export Excel (.csv)** writes a file that opens directly in Excel: the schedule matrix (person × day, with hour totals) followed by the hourly coverage table.
 
+Use the **User** selector in the header to show one person's shifts in both calendar views and in the planning table. Choose **All users** to restore the full plan. **Export calendar (.pdf)** opens the browser's print dialog with the current Week or Day calendar, its person-color legend, and the planning table, including the active user filter; select **Save as PDF** as the destination.
+
 The current state is also kept in the browser's local storage, so closing the tab does not lose work. When Supabase is configured, planners can sign in, save drafts, publish assignments, and notify recipients from their own Gmail account.
 
 ## Cloud setup

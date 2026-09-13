@@ -36,6 +36,19 @@ class StaticContractTests(unittest.TestCase):
         self.assertIn("function saveJSON()", HTML)
         self.assertIn("function exportCSV()", HTML)
 
+    def test_calendar_pdf_export_and_user_filter_exist(self):
+        parser = Parser()
+        parser.feed(HTML)
+        self.assertTrue({"btnPDF", "userFilter"} <= parser.ids)
+        self.assertIn("function exportPDF()", HTML)
+        self.assertIn("window.print()", HTML)
+        self.assertIn("header,aside,#statusCard{display:none!important}", HTML)
+        self.assertNotIn("header,aside,#statusCard,#tableCard{display:none!important}", HTML)
+        self.assertIn("function visiblePeople()", HTML)
+        self.assertIn("function personLegendHTML()", HTML)
+        self.assertIn('class="person-legend"', HTML)
+        self.assertGreaterEqual(HTML.count("visiblePeople().forEach"), 2)
+
     def test_dragging_shows_exact_time_preview(self):
         self.assertIn("function dragStartAt(t,e)", HTML)
         self.assertIn("function showDropPreview(t,start)", HTML)
@@ -48,6 +61,7 @@ class StaticContractTests(unittest.TestCase):
 
     def test_recipient_mode_is_read_only(self):
         self.assertIn(".from('week_assignments').select", HTML)
+        self.assertIn("header>.viewtools", HTML)
         self.assertNotRegex(HTML, r"assignmentId[\s\S]{0,500}\.update\(")
 
     def test_rls_and_grants(self):

@@ -35,6 +35,9 @@
   .btngroup button:first-child{border-radius:6px 0 0 6px}
   .btngroup button:last-child{border-radius:0 6px 6px 0}
   .btngroup button+button{border-left:none}
+  .viewtools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .viewtools label{white-space:nowrap}
+  .viewtools select{max-width:180px}
 
   .layout{display:flex;height:calc(100% - 55px)}
   aside{width:420px;min-width:420px;background:var(--panel);border-right:1px solid var(--border);overflow:auto;padding:14px;transition:margin .2s}
@@ -74,6 +77,10 @@
 
   .legend{display:flex;gap:12px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap}
   .legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+  .person-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:#f8fafc;font-size:12px}
+  .person-legend strong{font-size:12px}
+  .person-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .person-legend i{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.15)}
 
   /* Week view */
   .week{display:grid;grid-template-columns:56px repeat(7,1fr);gap:4px;min-width:900px}
@@ -155,7 +162,21 @@
     aside{width:100%;min-width:0;max-height:50vh;border-right:none;border-bottom:1px solid var(--border)}
     aside.collapsed{margin-left:0;display:none}
   }
-  @media print{header,aside{display:none}.layout{height:auto}}
+  .print-title{display:none}
+  @media print{
+    @page{size:landscape;margin:10mm}
+    header,aside,#statusCard{display:none!important}
+    html,body{height:auto;background:#fff}
+    .layout{display:block;height:auto}.layout main{display:block;overflow:visible;padding:0}
+    #mainCard,#tableCard{border:0;box-shadow:none;padding:0}
+    #tableCard{margin-top:12px}
+    #mainCard .week,#mainCard .dayview{min-width:0}
+    table.plan{font-size:11px}
+    table.plan select{appearance:none;border:0;padding:0;background:transparent}
+    .print-title{display:block;margin:0 0 10px;font-size:18px}
+    .hint,.rz{display:none!important}
+    .bar,.person-legend,.person-legend i,table.plan th,table.plan td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
 </style>
 </head>
 <body>
@@ -168,6 +189,11 @@
   <div class="btngroup">
     <button data-view="week" class="active">Week</button>
     <button data-view="day">Day</button>
+  </div>
+  <div class="viewtools">
+    <label for="userFilter" id="lblUserFilter">User</label>
+    <select id="userFilter"><option value="">All users</option></select>
+    <button id="btnPDF">📄 Export calendar (.pdf)</button>
   </div>
   <span class="spacer"></span>
   <button id="langToggle" title="Change language">EN</button>
@@ -243,14 +269,14 @@ const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 let DAY_NAMES={Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'};
 const LOCALES={
   en:{
-    title:'Weekly Resource Planner',optimize:'Optimize',clear_plan:'Clear plan',view_week:'Week',view_day:'Day',save:'Save plan (.json)',load:'Load plan',export_csv:'Export Excel (.csv)',week_settings:'Week settings',working_days:'Working days',people:'People',add_person:'+ Add person',load_sample:'Load sample',rest_hint:'Rest day is a preference: the optimizer honours it unless it is the only way to close a coverage gap (then it is flagged).',planning_table:'Planning table',person:'Person',planned:'Planned',budget:'Budget',remaining:'Remaining',coverage:'Coverage',required_word:'required',choose_off:'Choose "Off" to remove a shift, or drag a shift with ⠿ to another cell (day or person). Changes are reflected immediately in the calendar above. Blue cells are preferred rest days.',drag_hint_week:'Drag the top/bottom edge of a shift to change its start/end, drag the shift up/down to change its time, or onto another day to move it (the time follows where you drop it; dropping on a day where the person already works swaps the two shifts). Click a shift to jump to its cell in the table below.',drag_hint_day:'Drag the left/right edge of a shift to change its start/end, drag the shift left/right to change its time, onto another row to give it to another person, or onto a cell of the table below to move it to another day. Click a shift to jump to its cell in the table.' ,license_section:'License',lang_name:'EN',DAY_NAMES:{Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'},
+    title:'Weekly Resource Planner',optimize:'Optimize',clear_plan:'Clear plan',view_week:'Week',view_day:'Day',save:'Save plan (.json)',load:'Load plan',export_csv:'Export Excel (.csv)',export_pdf:'Export calendar (.pdf)',user_filter:'User',all_users:'All users',week_settings:'Week settings',working_days:'Working days',people:'People',add_person:'+ Add person',load_sample:'Load sample',rest_hint:'Rest day is a preference: the optimizer honours it unless it is the only way to close a coverage gap (then it is flagged).',planning_table:'Planning table',person:'Person',planned:'Planned',budget:'Budget',remaining:'Remaining',coverage:'Coverage',required_word:'required',choose_off:'Choose "Off" to remove a shift, or drag a shift with ⠿ to another cell (day or person). Changes are reflected immediately in the calendar above. Blue cells are preferred rest days.',drag_hint_week:'Drag the top/bottom edge of a shift to change its start/end, drag the shift up/down to change its time, or onto another day to move it (the time follows where you drop it; dropping on a day where the person already works swaps the two shifts). Click a shift to jump to its cell in the table below.',drag_hint_day:'Drag the left/right edge of a shift to change its start/end, drag the shift left/right to change its time, onto another row to give it to another person, or onto a cell of the table below to move it to another day. Click a shift to jump to its cell in the table.' ,license_section:'License',lang_name:'EN',DAY_NAMES:{Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'},
     week_starting:'Week starting (Monday)',day_start_time:'Day start time',day_end_time:'Day end time',second_resource_starts_at:'2nd resource starts at',people_required_before:'People required before 2nd start',people_required_after:'People required after 2nd start',num_working_days:'Number of working days per week',col_name:'Name',col_hours:'Hours/week',col_maxshift:'Max shift',col_minshift:'Min shift',col_restdays:'Rest day',toggle_panel_title:'Show/hide setup panel',remove_title:'Remove',change_color_title:'Click to change colour',sample_title:'Replace everything with the sample data',
-    rules_section:'Additional optimization parameters',rules_hint:'Define extra required-staffing rules for specific days/hours (e.g. "3 people on Sat/Sun", "1 person 18:00–close"). These combine with the base requirements above by taking the higher value.',add_rule:'+ Add rule',remove_rule_confirm:'Remove this rule?'
+    rules_section:'Additional optimization parameters',rules_hint:'Define extra required-staffing rules for specific days/hours (e.g. "3 people on Sat/Sun", "1 person 18:00–close"). These combine with the base requirements above by taking the higher value.',add_rule:'+ Add rule',remove_rule_confirm:'Remove this rule?',shift_colors:'Shift colors'
   },
   it:{
-    title:'Pianificatore Risorse Settimanale',optimize:'Ottimizza',clear_plan:'Azzera piano',view_week:'Settimana',view_day:'Giorno',save:'Salva piano (.json)',load:'Carica piano',export_csv:'Esporta Excel (.csv)',week_settings:'Impostazioni settimana',working_days:'Giorni lavorativi',people:'Persone',add_person:'+ Aggiungi persona',load_sample:'Carica esempio',rest_hint:'Il giorno di riposo è una preferenza: l\'ottimizzatore la rispetta a meno che sia l\'unico modo per coprire una lacuna.',planning_table:'Tabella di pianificazione',person:'Persona',planned:'Pianificato',budget:'Budget',remaining:'Rimanente',coverage:'Copertura',required_word:'richiesto',choose_off:'Scegli "Off" per rimuovere un turno, o trascina un turno con ⠿ in un\'altra cella (giorno o persona). Le modifiche vengono applicate immediatamente nel calendario sopra.',drag_hint_week:'Trascina il bordo superiore/inferiore di un turno per cambiare inizio/fine, trascina il turno su/giù per cambiare l\'orario, o trascinalo su un altro giorno per spostarlo (l\'orario segue il punto di rilascio; rilasciando in un giorno dove la persona già lavora i turni si scambiano). Clicca un turno per saltare alla sua cella nella tabella sottostante.',drag_hint_day:'Trascina il bordo sinistro/destro di un turno per cambiare inizio/fine, trascina il turno a sinistra/destra per cambiare l\'orario, su un\'altra riga per assegnarlo a un\'altra persona, o su una cella della tabella sottostante per spostarlo in un altro giorno. Clicca un turno per saltare alla sua cella nella tabella.' ,license_section:'Licenza',lang_name:'IT',DAY_NAMES:{Mon:'Lunedì',Tue:'Martedì',Wed:'Mercoledì',Thu:'Giovedì',Fri:'Venerdì',Sat:'Sabato',Sun:'Domenica'}
+    title:'Pianificatore Risorse Settimanale',optimize:'Ottimizza',clear_plan:'Azzera piano',view_week:'Settimana',view_day:'Giorno',save:'Salva piano (.json)',load:'Carica piano',export_csv:'Esporta Excel (.csv)',export_pdf:'Esporta calendario (.pdf)',user_filter:'Utente',all_users:'Tutti gli utenti',week_settings:'Impostazioni settimana',working_days:'Giorni lavorativi',people:'Persone',add_person:'+ Aggiungi persona',load_sample:'Carica esempio',rest_hint:'Il giorno di riposo è una preferenza: l\'ottimizzatore la rispetta a meno che sia l\'unico modo per coprire una lacuna.',planning_table:'Tabella di pianificazione',person:'Persona',planned:'Pianificato',budget:'Budget',remaining:'Rimanente',coverage:'Copertura',required_word:'richiesto',choose_off:'Scegli "Off" per rimuovere un turno, o trascina un turno con ⠿ in un\'altra cella (giorno o persona). Le modifiche vengono applicate immediatamente nel calendario sopra.',drag_hint_week:'Trascina il bordo superiore/inferiore di un turno per cambiare inizio/fine, trascina il turno su/giù per cambiare l\'orario, o trascinalo su un altro giorno per spostarlo (l\'orario segue il punto di rilascio; rilasciando in un giorno dove la persona già lavora i turni si scambiano). Clicca un turno per saltare alla sua cella nella tabella sottostante.',drag_hint_day:'Trascina il bordo sinistro/destro di un turno per cambiare inizio/fine, trascina il turno a sinistra/destra per cambiare l\'orario, su un\'altra riga per assegnarlo a un\'altra persona, o su una cella della tabella sottostante per spostarlo in un altro giorno. Clicca un turno per saltare alla sua cella nella tabella.' ,license_section:'Licenza',lang_name:'IT',DAY_NAMES:{Mon:'Lunedì',Tue:'Martedì',Wed:'Mercoledì',Thu:'Giovedì',Fri:'Venerdì',Sat:'Sabato',Sun:'Domenica'}
     ,week_starting:'Inizio settimana (Lunedì)',day_start_time:'Ora inizio giorno',day_end_time:'Ora fine giorno',second_resource_starts_at:'2° risorsa inizia alle',people_required_before:'Persone richieste prima del 2° inizio',people_required_after:'Persone richieste dopo il 2° inizio',num_working_days:'Numero di giorni lavorativi a settimana',col_name:'Nome',col_hours:'Ore/settimana',col_maxshift:'Max turno',col_minshift:'Min turno',col_restdays:'Giorno di riposo',toggle_panel_title:'Mostra/nascondi pannello impostazioni',remove_title:'Rimuovi',change_color_title:'Clicca per cambiare colore',sample_title:'Sostituisci impostazioni, persone e piano con i dati di esempio'
-    ,rules_section:'Parametri di ottimizzazione aggiuntivi',rules_hint:'Definisci regole di personale aggiuntive per giorni/orari specifici (es. "3 persone sabato e domenica", "1 persona dalle 18:00 alla chiusura"). Si combinano con i requisiti base sopra prendendo il valore più alto.',add_rule:'+ Aggiungi regola',remove_rule_confirm:'Rimuovere questa regola?'
+    ,rules_section:'Parametri di ottimizzazione aggiuntivi',rules_hint:'Definisci regole di personale aggiuntive per giorni/orari specifici (es. "3 persone sabato e domenica", "1 persona dalle 18:00 alla chiusura"). Si combinano con i requisiti base sopra prendendo il valore più alto.',add_rule:'+ Aggiungi regola',remove_rule_confirm:'Rimuovere questa regola?',shift_colors:'Colori dei turni'
   }
 };
 let currentLang='en';
@@ -284,6 +310,8 @@ function setLang(l){currentLang=l;document.getElementById('langToggle').textCont
   document.getElementById('btnSave').textContent='💾 '+t('save');
   document.getElementById('btnLoad').textContent='📂 '+t('load');
   document.getElementById('btnCSV').textContent='📊 '+t('export_csv');
+  document.getElementById('btnPDF').textContent='📄 '+t('export_pdf');
+  document.getElementById('lblUserFilter').textContent=t('user_filter');
   document.getElementById('btnAddPerson').textContent=t('add_person');
   document.getElementById('btnSample').textContent=t('load_sample');
   // re-render to apply translated dynamic content
@@ -293,7 +321,7 @@ const COLORS=['#2563eb','#16a34a','#d97706','#7c3aed','#db2777','#0891b2','#dc26
 const LS_KEY='resource_planner_v1';
 
 let state=null;
-const ui={view:'week',day:null};
+const ui={view:'week',day:null,userId:''};
 let cloudClient=null,cloudUser=null,currentWeekId=null,gmailConnected=false;
 const cloudConfig=window.RESOURCE_PLANNER_CONFIG||{};
 const assignmentId=new URLSearchParams(location.search).get('assignment');
@@ -559,10 +587,14 @@ function readSettings(){
 
 /* ---------- main views ---------- */
 function render(){
+  if(ui.userId&&!state.people.some(p=>p.id===ui.userId))ui.userId='';
+  renderUserFilter();
   document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===ui.view));
   renderStatus();
   const m=$('#mainCard');
-  m.innerHTML=ui.view==='day'?dayHTML():weekHTML();
+  const filterName=ui.userId?(state.people.find(p=>p.id===ui.userId)||{}).name:'';
+  const printTitle=`<h1 class="print-title">${t('title')}${state.settings.weekLabel?' · '+esc(state.settings.weekLabel):''}${filterName?' · '+esc(filterName):''}</h1>`;
+  m.innerHTML=printTitle+personLegendHTML()+(ui.view==='day'?dayHTML():weekHTML());
   $('#tableCard').innerHTML='<h3>'+t('planning_table')+'</h3>'+tableHTML();
   // apply translations for dynamic hints/content
   // translate hint texts inserted by week/day/table HTML
@@ -571,6 +603,17 @@ function render(){
   });
   // ensure header/button translations remain
   document.getElementById('langToggle').textContent=LOCALES[currentLang].lang_name;
+}
+function visiblePeople(){return ui.userId?state.people.filter(p=>p.id===ui.userId):state.people;}
+function personLegendHTML(){
+  const people=visiblePeople();
+  if(!people.length)return '';
+  return `<div class="person-legend"><strong>${t('shift_colors')}:</strong>${people.map(p=>`<span><i style="background:${p.color}"></i>${esc(p.name)}</span>`).join('')}</div>`;
+}
+function renderUserFilter(){
+  const sel=$('#userFilter'),value=ui.userId;
+  sel.innerHTML=`<option value="">${t('all_users')}</option>`+state.people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  sel.value=value;
 }
 function renderStatus(){
   const a=analyze(state.schedule),s=state.settings;
@@ -604,7 +647,7 @@ function weekHTML(){
     const cov=coverage(state.schedule,d);
     out+=`<div class="daycol ${on?'':'off'}" style="height:${H.length*RH}px" ${on?`data-drop="*|${d}" data-axis="y"`:''}>`;
     if(on)out+=H.map(h=>`<div class="hrow ${covClass(cov[h],need(d,h))}" title="${hh(h)}: ${cov[h]} / ${need(d,h)} required"></div>`).join('');
-    const shifts=state.people.map(p=>({p,sh:getShift(state.schedule,p.id,d)})).filter(x=>x.sh);
+    const shifts=visiblePeople().map(p=>({p,sh:getShift(state.schedule,p.id,d)})).filter(x=>x.sh);
     const n=lanes(shifts)||1;
     shifts.forEach(x=>{
       const top=(x.sh.start-s.windowStart)*RH,h=(x.sh.end-x.sh.start)*RH;
@@ -622,7 +665,7 @@ function dayHTML(){
   const d=ui.day,cov=coverage(state.schedule,d),cols=`grid-template-columns:repeat(${H.length},1fr)`,ot=overtimeMap();
   let out=`<div class="dayview"><div class="dsel"><button data-dnav="-1">‹</button><select id="daySel">${s.workingDays.map(x=>`<option value="${x}" ${x===d?'selected':''}>${DAY_NAMES[x]} ${dateOf(x)}</option>`).join('')}</select><button data-dnav="1">›</button></div>`;
   out+=`<div class="axis"><div></div><div class="cells" style="${cols}">${H.map(h=>`<div>${hh(h)}</div>`).join('')}</div></div>`;
-  state.people.forEach(p=>{
+  visiblePeople().forEach(p=>{
     const sh=getShift(state.schedule,p.id,d);
     const rest=p.restDay===d?'<small>(rest day)</small>':'';
     out+=`<div class="drow"><div class="name"><span class="swatch" style="background:${p.color}"></span>${esc(p.name)} ${rest}</div><div class="track" data-drop="${p.id}|${d}" data-axis="x">`;
@@ -638,7 +681,7 @@ function tableHTML(){
   const s=state.settings,H=hours(),wd=s.workingDays;
   const opt=(from,to,val)=>{let o='';for(let h=from;h<=to;h++)o+=`<option value="${h}" ${h===val?'selected':''}>${hh(h)}</option>`;return o;};
   let out=`<table class="plan"><thead><tr><th>${t('person')}</th>${wd.map(d=>`<th>${DAY_NAMES[d]}<br><small>${dateOf(d)}</small></th>`).join('')}${'<th>'+t('planned')+'</th><th>'+t('budget')+'</th><th>'+t('remaining')+'</th>'}</tr></thead><tbody>`;
-  state.people.forEach(p=>{
+  visiblePeople().forEach(p=>{
     const tot=assignedHours(state.schedule,p),rem=p.weeklyHours-tot;
     out+=`<tr><td class="name"><span class="swatch" style="background:${p.color}"></span> ${esc(p.name)}<br><small class="hint">max ${p.maxShift}h · min ${p.minShift}h</small></td>`;
     wd.forEach(d=>{
@@ -680,6 +723,13 @@ function exportCSV(){
   download(fileStem()+'.csv',csv,'text/csv;charset=utf-8');
 }
 function saveJSON(){download(fileStem()+'.json',JSON.stringify(state,null,2),'application/json');}
+function exportPDF(){
+  const oldTitle=document.title,person=ui.userId?state.people.find(p=>p.id===ui.userId):null;
+  document.title=fileStem()+(person?'_'+person.name.replace(/[^a-z0-9_-]+/gi,'_'):'')+'_calendar';
+  window.addEventListener('afterprint',()=>{document.title=oldTitle;},{once:true});
+  window.print();
+  setTimeout(()=>{document.title=oldTitle;},1000);
+}
 function loadJSON(file){
   const r=new FileReader();
   r.onload=()=>{try{const j=JSON.parse(r.result);if(!j||typeof j!=='object'||!j.settings||!Array.isArray(j.people))throw new Error('Not a resource planner file');state=normalize(j);ui.day=null;persist();renderSettings();render();}catch(e){alert('Could not load file: '+e.message);}};
@@ -755,7 +805,7 @@ async function gmailAction(action){
   }catch(e){cloudMessage(e.message,true);}
 }
 async function renderRecipientAssignment(){
-  document.querySelectorAll('header>button,header>.btngroup,header>#langToggle,header>#btnSave,header>#btnLoad,header>#btnCSV').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('header>button,header>.btngroup,header>.viewtools,header>#langToggle,header>#btnSave,header>#btnLoad,header>#btnCSV').forEach(el=>el.classList.add('hidden'));
   $('#panel').classList.add('hidden');$('#statusCard').classList.add('hidden');$('#tableCard').classList.add('hidden');
   if(!cloudUser){$('#mainCard').innerHTML='<div class="recipient-card"><h2>Your published assignment</h2><p>Sign in with the Google account matching the email used by your planner.</p></div>';return;}
   const {data,error}=await cloudClient.from('week_assignments').select('week_start,person_name,assignment_payload,published_at').eq('week_id',assignmentId).maybeSingle();
@@ -782,6 +832,8 @@ function bind(){
   $('#btnClear').onclick=()=>{if(confirm('Remove all planned shifts?')){state.people.forEach(p=>state.schedule[p.id]={});persist();render();}};
   $('#btnSave').onclick=saveJSON;
   $('#btnCSV').onclick=exportCSV;
+  $('#btnPDF').onclick=exportPDF;
+  $('#userFilter').onchange=e=>{ui.userId=e.target.value;render();};
   $('#btnLoad').onclick=()=>$('#fileInput').click();
   $('#fileInput').onchange=e=>{if(e.target.files[0])loadJSON(e.target.files[0]);e.target.value='';};
   $('#btnSignIn').onclick=async()=>{if(!cloudClient)return;await cloudClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:appUrl()+(assignmentId?`?assignment=${encodeURIComponent(assignmentId)}`:'')}});};

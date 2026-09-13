@@ -1,3 +1,43 @@
+# Wöchentlicher Ressourcenplaner
+
+Ein einzelnes, statisches HTML-Tool: `resource_planner.html` in einem modernen Browser (Edge, Chrome, Firefox) öffnen. Keine Installation, funktioniert offline.
+
+## Was es macht
+Erstellt einen Schichtplan für eine Woche, sodass das tägliche Servicefenster immer besetzt ist:
+- ab **Tag Beginn** ist eine Person anwesend (konfigurierbar: "Personen vor 2. Start"),
+- ab **2. Ressource beginnt um** (Standard 10:00) sind zwei Personen bis **Tag Ende** anwesend.
+
+## Eingaben (linkes Panel)
+| Einstellung | Bedeutung |
+|---|---|
+| Woche beginnt | Optionales Montag-Datum, verwendet für Spaltenüberschriften und Dateinamen |
+| Tag Beginn / Ende | Das täglich abzudeckende Zeitfenster (Stundenschritt) |
+| 2. Ressource beginnt um | Stunde, ab der höhere Personalbedarf gilt |
+| Personen erforderlich vorher / nachher | Benötigte Personalstärke in den beiden Tagesabschnitten (Standard 1 / 2) |
+| Arbeitstage | Anzahl der Tage pro Woche **und** welche Tage (Mon–Sun auswählbar) |
+| Zusätzliche Optimierungsparameter | Zusätzliche Personalregeln für bestimmte Tage/Stunden (z. B. "3 Personen Sa/So", "1 Person 18:00–Schluss"); werden mit den Basisanforderungen kombiniert (höherer Wert) und als harte Nebenbedingungen berücksichtigt |
+| Personen | Name, verfügbare Stunden pro Woche, max./min. Schichtlänge, bevorzugter Ruhetag |
+
+Der Ruhetag ist eine Präferenz: er wird eingehalten, außer es ist die einzige Möglichkeit, eine Abdeckungslücke zu schließen — dann wird der Plan entsprechend markiert.
+
+## Ablauf
+1. Einstellungen und Personen ausfüllen (oder **Load sample** klicken).
+2. **⚡ Optimize** klicken. Die Statusleiste zeigt benötigte vs. verfügbare Stunden, nicht abgedeckte / überbesetzte Stunden und Warnungen — einschließlich nicht erfüllbarer benutzerdefinierter Regeln.
+3. In der **Week**- oder **Day**-Ansicht prüfen; die **Planungstabelle** ist immer darunter sichtbar. Jede Tabellenzelle ist editierbar (Start / Ende / Off) und Änderungen erscheinen sofort im Kalender. Ein Klick auf eine Schicht springt zur entsprechenden Tabellenzelle.
+   - **Drag & drop**: In der Wochenansicht eine Schicht nach oben/unten ziehen, um die Startzeit zu ändern (Dauer bleibt), oder in eine andere Tagesspalte ziehen, um sie zu verschieben — die Zeit folgt dem Drop-Punkt; falls die Person im Zieltag bereits arbeitet, werden die Schichten getauscht. In der Tagesansicht links/rechts ziehen, um die Zeit zu ändern, oder auf eine andere Zeile ziehen, um neu zuzuweisen.
+   - **Größenänderung**: Den oberen/unteren Rand einer Schicht (Wochenansicht) oder den linken/rechten Rand (Tagesansicht) ziehen, um Start/Ende anzupassen.
+   - **Überstunden**: Überschreitet eine Person ihr Wochenbudget, zeigt jede ihrer Schichten ein `OT: Xh`-Label mit dem Überschuss.
+4. **Save plan (.json)** speichert den gesamten Zustand; **Load plan** lädt ihn wieder.
+5. **Export Excel (.csv)** erzeugt eine Excel-kompatible Datei mit der Personen×Tage-Matrix und der stündlichen Abdeckungstabelle.
+
+Der Zustand wird im Browser-`localStorage` gehalten. Mit Supabase konfiguriert, können Planner sich anmelden, Entwürfe speichern, Zuweisungen veröffentlichen und Empfänger per Gmail benachrichtigen.
+
+## Farbenlegende
+- grün – erforderliche Personalstärke erfüllt · rot – unterbesetzt · bernstein – überbesetzt
+- blaue Tabellenzelle – bevorzugter Ruhetag · roter Rahmen – Verstoß gegen min/max Schicht oder Tagesfenster
+
+## Lizenz
+Dieses Projekt steht unter der MIT License — siehe `LICENSE` für Details. Nutzung, Modifikation und Verbreitung (auch kommerziell) sind erlaubt, solange der Copyright-Hinweis und der Lizenztext beigefügt sind.
 # Wochen-Ressourcenplaner
 
 *[English version](README.md) · [Versione italiana](README-it.md) · [Versión en español](README-es.md)*
