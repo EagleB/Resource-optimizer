@@ -1,0 +1,7 @@
+project_id = "resource-optimizer"
+
+[functions.gmail-oauth]
+verify_jwt = false
+
+[functions.publish-week]
+verify_jwt = false

@@ -29,7 +29,63 @@ Rest day is a preference: it is honoured unless it is the only way to close a co
 4. **Save plan (.json)** to keep the whole plan (settings, people, shifts); **Load plan** re-imports it later.
 5. **Export Excel (.csv)** writes a file that opens directly in Excel: the schedule matrix (person × day, with hour totals) followed by the hourly coverage table.
 
-The current state is also kept in the browser's local storage, so closing the tab does not lose work.
+The current state is also kept in the browser's local storage, so closing the tab does not lose work. When Supabase is configured, planners can sign in, save drafts, publish assignments, and notify recipients from their own Gmail account.
+
+## Cloud setup
+
+The planner remains a static application. Cloud features require serving it over HTTP(S); direct `file://` use continues to work in offline-only mode.
+
+### 1. Supabase
+
+1. Create a dedicated Supabase project.
+2. Apply `supabase/migrations/20260913000000_planner_cloud.sql`.
+3. Enable Google in **Authentication → Providers**. In Google Cloud, create an OAuth web client for application login and add Supabase's displayed callback URL.
+4. Add the local URL and GitHub Pages URL under **Authentication → URL Configuration**. Example local URL: `http://localhost:8000/resource_planner.html`.
+5. Deploy both Edge Functions with JWT gateway verification disabled; each function validates the user session itself:
+
+   ```sh
+   supabase functions deploy gmail-oauth --no-verify-jwt
+   supabase functions deploy publish-week --no-verify-jwt
+   ```
+
+6. Copy the project URL and active `sb_publishable_...` key into `config.js`. Never place a secret/service-role key there.
+
+### 2. Per-planner Gmail sending
+
+Create a second Google OAuth web client for Gmail authorization, enable the Gmail API, and add this exact authorized redirect URI:
+
+```text
+https://PROJECT_REF.supabase.co/functions/v1/gmail-oauth
+```
+
+Set these Edge Function secrets:
+
+```text
+GOOGLE_GMAIL_CLIENT_ID=...
+GOOGLE_GMAIL_CLIENT_SECRET=...
+TOKEN_ENCRYPTION_KEY=...
+APP_ORIGINS=http://localhost:8000,https://YOUR_GITHUB_USER.github.io
+```
+
+`TOKEN_ENCRYPTION_KEY` must be a base64-encoded random 32-byte value. Generate it locally with `openssl rand -base64 32`. `APP_ORIGINS` is a comma-separated origin allowlist without paths.
+
+The Gmail OAuth consent requests only `openid`, `email`, and `gmail.send`. While the Google OAuth app is in Testing mode, add every planner who will connect Gmail as a test user. Google may expire refresh tokens for external apps in Testing mode; move the consent screen to Production and complete any verification Google requires before relying on long-lived connections.
+
+### 3. GitHub Pages
+
+Publish the repository root with GitHub Pages, update `APP_ORIGINS`, Supabase redirect URLs, and `config.js`, then redeploy the functions if their code changed. Both planner and recipient links use the same `resource_planner.html` page.
+
+## Cloud permissions and workflow
+
+- Any Google-authenticated user can create planner-owned weeks. Owners cannot access another planner's weeks.
+- **Save draft** stores the editable planner state without notifying anyone.
+- **Publish & notify** requires a valid, unique email for every person, replaces the latest published assignments, and sends up to 50 individual Gmail messages.
+- Recipients can sign in after receiving the email. Database policies return only the published assignment matching their verified Google email.
+- Recipients cannot view drafts, coworkers, full published planner payloads, or mutation controls.
+- **Retry failed** sends only rows whose most recent notification failed.
+- Disconnecting Gmail deletes the encrypted refresh token. Deleting a week also deletes its published assignments.
+
+After deployment, run Supabase's security and performance advisors and review every finding before production use.
 
 ## Colour legend
 - green – required headcount met · red – under-staffed · amber – over-staffed
